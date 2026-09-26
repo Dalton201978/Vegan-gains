@@ -123,6 +123,7 @@
   /* ---------- sauce cards ---------- */
   .sauce-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
   .sauce-card h3{ margin:0 0 2px; font-size:16px; }
+  .sauce-card .ing-list li{ padding:4px 9px; font-size:13px; }
   .sauce-meta{ font-size:11.5px; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; margin-bottom:10px; }
   .sauce-cols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   @media (max-width:520px){ .sauce-cols{ grid-template-columns:1fr; } }
@@ -131,6 +132,8 @@
   .pill{ font-size:11px; background:var(--surface-2); padding:3px 9px; border-radius:99px; color:var(--text-muted); border:0; font-family:inherit; }
   button.pill{ cursor:pointer; }
   button.pill:hover{ color:var(--accent); background:var(--accent-soft); }
+  .pill-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:12px 0 0; }
+  .pill-wrap + .pill-label{ margin-top:10px; }
   .section-heading{ font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); font-weight:700;
     margin:26px 0 10px; }
   .section-heading:first-child{ margin-top:0; }
@@ -260,7 +263,9 @@ const ALL_MAIN = [
   ...D.DINNERS.map(m=>({...m, cat:'dinner'}))
 ];
 function byId(id){ return ALL_MAIN.find(m=>m.id===id) || D.SNACKS.find(s=>s.id===id); }
-function sauceByName(name){ return D.SAUCES.find(s => name && name.toLowerCase().includes(s.name.toLowerCase())); }
+// Meal recipes may call a sauce by a shorter name (`match`) than its recipe title.
+const sauceKey = s => (s.match || s.name);
+function sauceByName(name){ return D.SAUCES.find(s => name && name.toLowerCase().includes(sauceKey(s).toLowerCase())); }
 
 /* ---------------- routing / nav ---------------- */
 const ROUTES = {
@@ -301,12 +306,13 @@ function portionsFor(meal){
 function ingredientLine(ing){
   const sauce = sauceByName(ing);
   if(!sauce) return esc(ing);
-  const i = ing.toLowerCase().indexOf(sauce.name.toLowerCase()), j = i + sauce.name.length;
+  const key = sauceKey(sauce);
+  const i = ing.toLowerCase().indexOf(key.toLowerCase()), j = i + key.length;
   return esc(ing.slice(0,i)) + `<a href="#" data-sauce="${sauce.id}" class="sauce-jump">${esc(ing.slice(i,j))}</a>` + esc(ing.slice(j));
 }
 // Meals that call for a sauce, either in their ingredient lines or as their listed sauce.
 function mealsUsingSauce(s){
-  const n = s.name.toLowerCase();
+  const n = sauceKey(s).toLowerCase();
   return ALL_MAIN.filter(m => (m.sauce||'').toLowerCase()===n ||
     [...(m.weightLoss||[]), ...(m.weightGain||[])].some(l => l.toLowerCase().includes(n)));
 }
@@ -423,10 +429,10 @@ function openSnackModal(id){
 function renderSauces(){
   const sections = [...new Set(D.SAUCES.map(s=>s.section))];
   $('#main').innerHTML = `
-    ${pageHead('sauces',`The ${D.SAUCES.length} Sauces`,'One sauce swap turns the same protein + carb + vegetable base into a completely different meal. Every recipe above links back here, and each sauce lists the meals that use it.')}
+    ${pageHead('sauces',`The ${D.SAUCES.length} Sauces`,'One sauce swap turns the same protein + carb + vegetable base into a completely different meal. Batch one section a week for a four-week rotation. Every meal recipe links back here, and each sauce lists the meals that use it.')}
     ${sections.map(sec => `
-      <div class="section-heading">${esc(sec)}</div>
-      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
+      <div class="section-heading">${(()=>{ const w = D.SAUCES.find(s=>s.section===sec).week; return w ? `Week ${w} — ` : ''; })()}${esc(sec)}</div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));">
         ${D.SAUCES.filter(s=>s.section===sec).map(sauceCard).join('')}
       </div>`).join('')}
   `;
@@ -442,13 +448,15 @@ function sauceCard(s){
   const meta = [s.yields&&`Makes ${esc(s.yields)}`, s.fridge&&`Fridge ${esc(s.fridge)}`, s.freezer&&`Freezer ${esc(s.freezer)}`].filter(Boolean);
   return `<div class="sauce-card" id="sc-${s.id}">
     <h3>${esc(s.name)}</h3>
-    <div class="sauce-meta">Used in ${used.length} meal${used.length===1?'':'s'}${meta.length?' · '+meta.join(' · '):''}</div>
+    <div class="sauce-meta">${meta.join(' · ')}</div>
     ${s.incomplete ? `<div class="prep-note">Recipe not added yet: the source documents name this sauce but don't include its ingredients or directions.</div>` : `
     <div class="sauce-cols">
       <div><h4>Ingredients</h4><ul class="ing-list">${(s.ingredients||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
       <div><h4>Directions</h4><ul class="ing-list">${(s.directions||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
     </div>`}
-    <div class="pill-wrap">${used.map(m=>`<button class="pill meal-jump" data-id="${m.id}" title="${esc(m.cat)}">${CAT_SHORT[m.cat]}${m.id.slice(1)} · ${esc(m.name)}</button>`).join('')}</div>
+    ${(s.pairings||[]).length ? `<h4 class="pill-label">Great with</h4><div class="pill-wrap">${s.pairings.map(p=>`<span class="pill">${esc(p)}</span>`).join('')}</div>` : ''}
+    <h4 class="pill-label">Used in ${used.length} meal${used.length===1?'':'s'}</h4>
+    <div class="pill-wrap">${used.length ? '' : '<span class="pill">Not used in the meal plans yet</span>'}${used.map(m=>`<button class="pill meal-jump" data-id="${m.id}" title="${esc(m.cat)}">${CAT_SHORT[m.cat]}${m.id.slice(1)} · ${esc(m.name)}</button>`).join('')}</div>
     ${s.note?`<div class="prep-note" style="margin-top:10px;">${esc(s.note)}</div>`:''}
   </div>`;
 }

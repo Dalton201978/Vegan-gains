@@ -4,8 +4,7 @@
    system means editing this file only.
 
    Source: the Vegan breakfast / lunch 1–10 / lunch 11–25 / dinner / snack
-   planning PDFs. Sauce recipes were not in those files, so every sauce is
-   flagged `incomplete` until its recipe is added.
+   planning PDFs and the 20-sauce PDF.
 
    Schema
    ------
@@ -19,10 +18,11 @@
 
    SNACKS: { id, name, bulk, storage, roles: [], weightLoss, weightGain,
              ingredients: [], directions: [], note? }
-   SAUCES: { id, name, section, incomplete?,
-             yields?, fridge?, freezer?, ingredients?, directions?, note? }
-     To add a recipe: fill in the optional fields and delete `incomplete`.
-     "Used in" is computed from the meals, so it needs no upkeep.
+   SAUCES: { id, name, match?, section, week, yields, fridge, freezer,
+             ingredients: [], directions: [], pairings: [], note?, incomplete? }
+     `match` is the shorter name meal recipes use for the sauce, when it
+     differs from `name`. `freezer` is the storage guide's symbol:
+     ✅ / ⚠ / ❌. "Used in" is computed from the meals.
    PORTION_FRAMEWORK: { weightLoss: {protein, starch, vegetables, sauce, fats},
                         weightGain: {...} }
    CORE_INGREDIENTS: { protein: [], carb: [], vegetable: [], fat: [] }
@@ -2664,118 +2664,740 @@ window.MEAL_DATA = {
   ],
   "SAUCES": [
     {
-      "id": "chipotle-lime",
-      "name": "Chipotle Lime Sauce",
-      "section": "Southwest & Latin",
-      "incomplete": true
+      "id": "sa1",
+      "name": "Creamy Sriracha Sauce",
+      "section": "Spicy & Bold",
+      "week": 1,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "1 cup vegan mayonnaise",
+        "½ cup unsweetened plant milk",
+        "⅓ cup sriracha",
+        "2 tbsp fresh lime juice",
+        "1 tbsp maple syrup",
+        "2 cloves garlic, minced",
+        "½ tsp smoked paprika",
+        "¼ tsp salt"
+      ],
+      "directions": [
+        "Whisk everything together until smooth.",
+        "Add another tablespoon or two of plant milk if you want a thinner sauce."
+      ],
+      "pairings": [
+        "Tofu",
+        "Vegan burgers",
+        "Fries",
+        "Roasted potatoes",
+        "Cauliflower",
+        "Wraps",
+        "Rice bowls"
+      ]
     },
     {
-      "id": "jalapeno-cilantro",
-      "name": "Jalapeño Cilantro Sauce",
-      "section": "Southwest & Latin",
-      "incomplete": true
-    },
-    {
-      "id": "cilantro-lime-cashew",
-      "name": "Cilantro-Lime Cashew Sauce",
-      "section": "Southwest & Latin",
-      "incomplete": true
-    },
-    {
-      "id": "avocado-lime-crema",
-      "name": "Avocado Lime Crema",
-      "section": "Southwest & Latin",
-      "incomplete": true
-    },
-    {
-      "id": "miso-ginger",
-      "name": "Miso Ginger Sauce",
-      "section": "Asian-inspired",
-      "incomplete": true
-    },
-    {
-      "id": "gochujang",
-      "name": "Gochujang Sauce",
-      "section": "Asian-inspired",
-      "incomplete": true
-    },
-    {
-      "id": "spicy-peanut",
+      "id": "sa2",
       "name": "Spicy Peanut Sauce",
-      "section": "Asian-inspired",
-      "incomplete": true
+      "section": "Spicy & Bold",
+      "week": 1,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "1 cup creamy natural peanut butter",
+        "½ cup warm water",
+        "¼ cup low-sodium soy sauce or tamari",
+        "3 tbsp lime juice",
+        "2 tbsp maple syrup",
+        "1 tbsp rice vinegar",
+        "1 tbsp sriracha or chili garlic sauce",
+        "2 cloves garlic, minced",
+        "1 tbsp fresh ginger, grated",
+        "½ tsp sesame oil"
+      ],
+      "directions": [
+        "Whisk peanut butter and warm water first.",
+        "Add remaining ingredients.",
+        "Whisk until smooth."
+      ],
+      "pairings": [
+        "Noodles",
+        "Tofu",
+        "Tempeh",
+        "Spring rolls",
+        "Broccoli",
+        "Cabbage",
+        "Rice bowls"
+      ],
+      "note": "Meal-prep tip: The sauce thickens in the refrigerator. Stir in 1–2 tbsp water before serving."
     },
     {
-      "id": "sweet-chili",
-      "name": "Sweet Chili Sauce",
-      "section": "Asian-inspired",
-      "incomplete": true
+      "id": "sa3",
+      "name": "Buffalo Sauce",
+      "section": "Spicy & Bold",
+      "week": 1,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1¼ cups vegan hot sauce",
+        "½ cup vegan butter, melted",
+        "2 tbsp white vinegar",
+        "1 tbsp maple syrup",
+        "1 tsp garlic powder",
+        "½ tsp onion powder",
+        "¼ tsp smoked paprika",
+        "¼ tsp salt"
+      ],
+      "directions": [
+        "Melt vegan butter over low heat.",
+        "Whisk in remaining ingredients.",
+        "Continue whisking until completely combined."
+      ],
+      "pairings": [
+        "Buffalo cauliflower",
+        "Tofu",
+        "Vegan chick'n",
+        "Wraps",
+        "Sandwiches",
+        "Roasted potatoes"
+      ],
+      "note": "For extra heat: Add ½–1 tsp cayenne pepper."
     },
     {
-      "id": "teriyaki",
+      "id": "sa4",
+      "name": "Chipotle Lime Sauce",
+      "section": "Spicy & Bold",
+      "week": 1,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "1 cup vegan mayonnaise",
+        "½ cup unsweetened plant milk",
+        "¼ cup fresh lime juice",
+        "2–3 tbsp adobo sauce from canned chipotle peppers",
+        "1 chipotle pepper, finely minced",
+        "2 cloves garlic",
+        "1 tbsp maple syrup",
+        "½ tsp cumin",
+        "½ tsp smoked paprika",
+        "¼ tsp salt"
+      ],
+      "directions": [
+        "Blend everything until smooth.",
+        "Taste and adjust lime, salt, or chipotle."
+      ],
+      "pairings": [
+        "Tacos",
+        "Burrito bowls",
+        "Black beans",
+        "Roasted corn",
+        "Potatoes",
+        "Tofu",
+        "Vegan fajitas"
+      ],
+      "note": "Heat tip: Start with 2 tbsp adobo sauce and add more for additional heat."
+    },
+    {
+      "id": "sa5",
+      "name": "Jalapeño Cilantro Sauce",
+      "section": "Spicy & Bold",
+      "week": 1,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "3–4 days",
+      "freezer": "❌",
+      "ingredients": [
+        "1 large ripe avocado",
+        "1 cup fresh cilantro",
+        "½ cup unsweetened plant milk",
+        "¼ cup fresh lime juice",
+        "1–2 jalapeños, seeded",
+        "2 cloves garlic",
+        "2 tbsp olive oil",
+        "½ tsp cumin",
+        "½ tsp salt",
+        "2–4 tbsp water as needed"
+      ],
+      "directions": [
+        "Add everything to a blender or food processor.",
+        "Blend until completely smooth.",
+        "Add water gradually until desired consistency."
+      ],
+      "pairings": [
+        "Tacos",
+        "Rice bowls",
+        "Black beans",
+        "Roasted vegetables",
+        "Potatoes",
+        "Tofu"
+      ],
+      "note": "Meal-prep note: Because of the avocado, make half the batch twice during the week for best color and freshness."
+    },
+    {
+      "id": "sa6",
+      "name": "Classic Tahini Lemon Sauce",
+      "section": "Creamy & Rich",
+      "week": 2,
+      "yields": "~2¼ cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "1 cup tahini",
+        "¾ cup cold water",
+        "⅓ cup fresh lemon juice",
+        "2 cloves garlic, minced",
+        "1 tbsp maple syrup",
+        "½ tsp ground cumin",
+        "½ tsp salt",
+        "¼ tsp black pepper"
+      ],
+      "directions": [
+        "Whisk tahini and lemon juice together.",
+        "Slowly add cold water.",
+        "Add garlic, maple syrup, cumin, salt, and pepper.",
+        "Adjust water to desired consistency."
+      ],
+      "pairings": [
+        "Falafel",
+        "Chickpeas",
+        "Roasted vegetables",
+        "Potatoes",
+        "Quinoa",
+        "Rice bowls",
+        "Tofu"
+      ],
+      "match": "Tahini Lemon Sauce",
+      "note": "Meal-prep tip: It thickens in the refrigerator. Add a splash of water before serving."
+    },
+    {
+      "id": "sa7",
+      "name": "Creamy Cashew Sauce",
+      "section": "Creamy & Rich",
+      "week": 2,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1½ cups raw unsalted cashews",
+        "¾ cup water",
+        "¼ cup nutritional yeast",
+        "2 tbsp fresh lemon juice",
+        "2 cloves garlic",
+        "½ tsp onion powder",
+        "½ tsp salt",
+        "¼ tsp black pepper",
+        "1 tbsp olive oil"
+      ],
+      "directions": [
+        "Soak cashews in hot water for 30 minutes or room-temperature water for 4 hours.",
+        "Drain and rinse.",
+        "Blend all ingredients until completely smooth.",
+        "Add additional water if necessary."
+      ],
+      "pairings": [
+        "Pasta",
+        "Roasted vegetables",
+        "Potatoes",
+        "Broccoli",
+        "Tofu",
+        "Grain bowls"
+      ],
+      "note": "Flavor variation: Add ½ tsp smoked paprika."
+    },
+    {
+      "id": "sa8",
+      "name": "Vegan Garlic Aioli",
+      "section": "Creamy & Rich",
+      "week": 2,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "1½ cups vegan mayonnaise",
+        "¼ cup unsweetened plant milk",
+        "¼ cup fresh lemon juice",
+        "6 cloves roasted garlic",
+        "1 tbsp Dijon mustard",
+        "1 tsp garlic powder",
+        "½ tsp salt",
+        "¼ tsp black pepper"
+      ],
+      "directions": [
+        "Roast garlic until soft and lightly browned.",
+        "Mash garlic into a paste.",
+        "Whisk everything together.",
+        "Refrigerate for at least 30 minutes before serving."
+      ],
+      "pairings": [
+        "Vegan burgers",
+        "Sandwiches",
+        "Wraps",
+        "Fries",
+        "Roasted potatoes",
+        "Cauliflower",
+        "Tofu"
+      ],
+      "match": "Garlic Aioli",
+      "note": "Garlic upgrade: Use 8 cloves for a stronger garlic flavor."
+    },
+    {
+      "id": "sa9",
+      "name": "Avocado Lime Crema",
+      "section": "Creamy & Rich",
+      "week": 2,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "3–4 days",
+      "freezer": "❌",
+      "ingredients": [
+        "2 large ripe avocados",
+        "½ cup unsweetened plant milk",
+        "⅓ cup fresh lime juice",
+        "½ cup fresh cilantro",
+        "2 cloves garlic",
+        "1 jalapeño, seeded",
+        "½ tsp cumin",
+        "½ tsp salt",
+        "2 tbsp olive oil",
+        "2–4 tbsp water as needed"
+      ],
+      "directions": [
+        "Add ingredients to a blender.",
+        "Blend until smooth.",
+        "Add water gradually until creamy.",
+        "Adjust lime and salt to taste."
+      ],
+      "pairings": [
+        "Tacos",
+        "Burritos",
+        "Rice bowls",
+        "Black beans",
+        "Roasted vegetables",
+        "Potatoes",
+        "Tofu"
+      ],
+      "note": "Storage: Make half the batch twice per week. Best used within 3–4 days."
+    },
+    {
+      "id": "sa10",
+      "name": "Cilantro-Lime Cashew Sauce",
+      "section": "Creamy & Rich",
+      "week": 2,
+      "yields": "~2¼ cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1½ cups raw unsalted cashews",
+        "¾ cup water",
+        "1 cup fresh cilantro",
+        "¼ cup fresh lime juice",
+        "2 cloves garlic",
+        "1 tbsp olive oil",
+        "½ tsp cumin",
+        "½ tsp salt",
+        "¼ tsp black pepper",
+        "1 tbsp maple syrup"
+      ],
+      "directions": [
+        "Soak cashews in hot water for 30 minutes.",
+        "Drain and rinse.",
+        "Blend everything until smooth.",
+        "Add water as needed."
+      ],
+      "pairings": [
+        "Tofu",
+        "Tempeh",
+        "Rice",
+        "Black beans",
+        "Roasted vegetables",
+        "Quinoa",
+        "Tacos",
+        "Burrito bowls"
+      ]
+    },
+    {
+      "id": "sa11",
+      "name": "Classic Marinara Sauce",
+      "section": "Italian & Mediterranean",
+      "week": 3,
+      "yields": "~2½ cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1 can (28 oz) crushed tomatoes",
+        "1 small yellow onion, finely diced",
+        "4 cloves garlic, minced",
+        "2 tbsp olive oil",
+        "1 tsp dried oregano",
+        "1 tsp dried basil",
+        "½ tsp onion powder",
+        "½ tsp salt",
+        "¼ tsp black pepper",
+        "1 tsp maple syrup (optional)",
+        "¼ tsp red pepper flakes (optional)"
+      ],
+      "directions": [
+        "Heat olive oil.",
+        "Sauté onion for 4–5 minutes.",
+        "Add garlic and cook 30–60 seconds.",
+        "Add tomatoes and seasonings.",
+        "Simmer uncovered 20–30 minutes."
+      ],
+      "pairings": [
+        "Pasta",
+        "Vegan meatballs",
+        "Eggplant",
+        "Zucchini",
+        "Tofu",
+        "Stuffed peppers",
+        "Lasagna"
+      ],
+      "match": "Classic Marinara",
+      "note": "Freezer: Excellent. Freeze individual portions for up to about 3 months."
+    },
+    {
+      "id": "sa12",
+      "name": "Vegan Pesto",
+      "section": "Italian & Mediterranean",
+      "week": 3,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "✅",
+      "ingredients": [
+        "3 cups fresh basil leaves, packed",
+        "½ cup raw cashews or pine nuts",
+        "½ cup extra-virgin olive oil",
+        "¼ cup nutritional yeast",
+        "3 cloves garlic",
+        "2 tbsp fresh lemon juice",
+        "½ tsp salt",
+        "¼ tsp black pepper",
+        "2–4 tbsp water as needed"
+      ],
+      "directions": [
+        "Add basil, nuts, nutritional yeast, garlic, lemon juice, salt, and pepper to a food processor.",
+        "Pulse several times.",
+        "Slowly add olive oil.",
+        "Add water as needed."
+      ],
+      "pairings": [
+        "Pasta",
+        "Potatoes",
+        "Tofu",
+        "Sandwiches",
+        "Wraps",
+        "Roasted vegetables",
+        "Grain bowls"
+      ],
+      "note": "Storage tip: Add a thin layer of olive oil to the surface before refrigerating."
+    },
+    {
+      "id": "sa13",
+      "name": "Roasted Red Pepper Sauce",
+      "section": "Italian & Mediterranean",
+      "week": 3,
+      "yields": "~2¼ cups · 7 servings",
+      "fridge": "4–5 days",
+      "freezer": "✅",
+      "ingredients": [
+        "2 large roasted red bell peppers or 1½ cups jarred roasted peppers",
+        "¾ cup raw cashews",
+        "½ cup unsweetened plant milk",
+        "2 cloves garlic",
+        "2 tbsp nutritional yeast",
+        "2 tbsp lemon juice",
+        "1 tbsp olive oil",
+        "½ tsp smoked paprika",
+        "½ tsp salt",
+        "¼ tsp black pepper"
+      ],
+      "directions": [
+        "Soak cashews in hot water for 30 minutes.",
+        "Drain and rinse.",
+        "Blend all ingredients until smooth.",
+        "Warm gently in a saucepan if using as pasta sauce."
+      ],
+      "pairings": [
+        "Pasta",
+        "Gnocchi",
+        "Tofu",
+        "Rice bowls",
+        "Roasted vegetables",
+        "Potatoes"
+      ],
+      "note": "Flavor upgrade: Add ½ tsp Italian seasoning."
+    },
+    {
+      "id": "sa14",
+      "name": "Creamy Tomato Sauce",
+      "section": "Italian & Mediterranean",
+      "week": 3,
+      "yields": "~2¼ cups · 7 servings",
+      "fridge": "4–5 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1½ cups tomato sauce",
+        "½ cup unsweetened plant milk",
+        "½ cup cashew cream",
+        "3 cloves garlic, minced",
+        "2 tbsp nutritional yeast",
+        "1 tbsp olive oil",
+        "1 tsp dried basil",
+        "½ tsp dried oregano",
+        "½ tsp salt",
+        "¼ tsp black pepper",
+        "¼ tsp red pepper flakes (optional)"
+      ],
+      "directions": [
+        "Heat olive oil.",
+        "Sauté garlic for 30 seconds.",
+        "Add tomato sauce and seasonings.",
+        "Simmer for 10 minutes.",
+        "Stir in plant milk and cashew cream.",
+        "Add nutritional yeast.",
+        "Simmer another 3–5 minutes."
+      ],
+      "pairings": [
+        "Pasta",
+        "Gnocchi",
+        "Vegan meatballs",
+        "Tofu",
+        "Mushrooms",
+        "Zucchini"
+      ],
+      "note": "Quick Cashew Cream: blend ½ cup soaked cashews with ½ cup water until completely smooth."
+    },
+    {
+      "id": "sa15",
+      "name": "Mediterranean Herb Sauce",
+      "section": "Italian & Mediterranean",
+      "week": 3,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "¾ cup extra-virgin olive oil",
+        "½ cup fresh parsley, finely chopped",
+        "¼ cup fresh basil, chopped",
+        "¼ cup fresh cilantro, chopped",
+        "¼ cup fresh lemon juice",
+        "4 cloves garlic, minced",
+        "1 tbsp red wine vinegar",
+        "1 tsp dried oregano",
+        "½ tsp salt",
+        "½ tsp black pepper",
+        "¼ tsp red pepper flakes (optional)"
+      ],
+      "directions": [
+        "Finely chop herbs and garlic.",
+        "Combine everything.",
+        "Whisk thoroughly.",
+        "Refrigerate for at least 30 minutes."
+      ],
+      "pairings": [
+        "Chickpeas",
+        "Potatoes",
+        "Tofu",
+        "Tempeh",
+        "Quinoa",
+        "Rice",
+        "Roasted vegetables",
+        "Salads",
+        "Pita"
+      ]
+    },
+    {
+      "id": "sa16",
       "name": "Teriyaki Sauce",
       "section": "Asian-inspired",
-      "incomplete": true
+      "week": 4,
+      "yields": "~2¼ cups · 7 servings",
+      "fridge": "7–10 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1 cup low-sodium soy sauce or tamari",
+        "½ cup water",
+        "¼ cup maple syrup",
+        "2 tbsp rice vinegar",
+        "1 tbsp toasted sesame oil",
+        "1 tbsp fresh ginger, grated",
+        "3 cloves garlic, minced",
+        "2 tbsp cornstarch",
+        "3 tbsp cold water"
+      ],
+      "directions": [
+        "Combine soy sauce, water, maple syrup, vinegar, sesame oil, ginger, and garlic.",
+        "Bring to a gentle simmer.",
+        "Mix cornstarch with 3 tbsp cold water.",
+        "Slowly whisk into sauce.",
+        "Simmer 2–3 minutes until thickened.",
+        "Cool before storing."
+      ],
+      "pairings": [
+        "Tofu",
+        "Tempeh",
+        "Mushrooms",
+        "Broccoli",
+        "Carrots",
+        "Rice",
+        "Noodles",
+        "Edamame"
+      ],
+      "note": "Meal-prep tip: Add a tablespoon of water if it becomes too thick."
     },
     {
-      "id": "sesame-ginger",
+      "id": "sa17",
       "name": "Sesame Ginger Sauce",
       "section": "Asian-inspired",
-      "incomplete": true
+      "week": 4,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "¾ cup low-sodium soy sauce or tamari",
+        "½ cup water",
+        "¼ cup rice vinegar",
+        "3 tbsp maple syrup",
+        "2 tbsp toasted sesame oil",
+        "2 tbsp fresh ginger, grated",
+        "3 cloves garlic, minced",
+        "1 tbsp tahini",
+        "1 tbsp lime juice",
+        "1 tsp red pepper flakes (optional)",
+        "1 tbsp sesame seeds"
+      ],
+      "directions": [
+        "Combine all ingredients except sesame seeds.",
+        "Whisk thoroughly.",
+        "Stir in sesame seeds.",
+        "Refrigerate for 30 minutes before serving."
+      ],
+      "pairings": [
+        "Noodles",
+        "Tofu",
+        "Broccoli",
+        "Cabbage",
+        "Carrots",
+        "Edamame",
+        "Rice bowls"
+      ],
+      "note": "Creamier version: Increase tahini to 2–3 tbsp."
     },
     {
-      "id": "tahini-lemon",
-      "name": "Tahini Lemon Sauce",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
+      "id": "sa18",
+      "name": "Sweet Chili Sauce",
+      "section": "Asian-inspired",
+      "week": 4,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "7–10 days",
+      "freezer": "✅",
+      "ingredients": [
+        "1 cup water",
+        "½ cup rice vinegar",
+        "½ cup maple syrup",
+        "¼ cup red chili paste or sambal oelek",
+        "4 cloves garlic, minced",
+        "1 tbsp fresh ginger, grated",
+        "2 tbsp cornstarch",
+        "3 tbsp cold water",
+        "½ tsp salt"
+      ],
+      "directions": [
+        "Combine water, vinegar, maple syrup, chili paste, garlic, ginger, and salt.",
+        "Bring to a gentle simmer.",
+        "Mix cornstarch and cold water.",
+        "Whisk into sauce.",
+        "Simmer 2–3 minutes.",
+        "Cool before storing."
+      ],
+      "pairings": [
+        "Spring rolls",
+        "Tofu",
+        "Cauliflower",
+        "Vegan chick'n",
+        "Rice",
+        "Vegetables",
+        "Noodles"
+      ],
+      "note": "Heat levels: mild 2–3 tbsp chili paste · medium ¼ cup · hot ⅓ cup."
     },
     {
-      "id": "mediterranean-herb",
-      "name": "Mediterranean Herb Sauce",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
+      "id": "sa19",
+      "name": "Korean-Style Gochujang Sauce",
+      "section": "Asian-inspired",
+      "week": 4,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "7–10 days",
+      "freezer": "✅",
+      "ingredients": [
+        "¾ cup gochujang",
+        "½ cup water",
+        "¼ cup low-sodium soy sauce",
+        "¼ cup maple syrup",
+        "2 tbsp rice vinegar",
+        "1 tbsp toasted sesame oil",
+        "3 cloves garlic, minced",
+        "1 tbsp fresh ginger, grated",
+        "1 tbsp sesame seeds",
+        "2 tbsp lime juice"
+      ],
+      "directions": [
+        "Combine all ingredients in a saucepan.",
+        "Bring to a gentle simmer.",
+        "Cook 5–7 minutes.",
+        "Stir occasionally.",
+        "Cool before refrigerating."
+      ],
+      "pairings": [
+        "Crispy tofu",
+        "Mushrooms",
+        "Rice",
+        "Noodles",
+        "Broccoli",
+        "Cabbage",
+        "Edamame",
+        "Roasted vegetables"
+      ],
+      "match": "Gochujang Sauce",
+      "note": "Meal Bowl: Crispy tofu + rice + broccoli + shredded carrots + cucumber + gochujang sauce + sesame seeds"
     },
     {
-      "id": "vegan-pesto",
-      "name": "Vegan Pesto",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
-    },
-    {
-      "id": "roasted-red-pepper",
-      "name": "Roasted Red Pepper Sauce",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
-    },
-    {
-      "id": "creamy-tomato",
-      "name": "Creamy Tomato Sauce",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
-    },
-    {
-      "id": "classic-marinara",
-      "name": "Classic Marinara",
-      "section": "Mediterranean & Italian",
-      "incomplete": true
-    },
-    {
-      "id": "creamy-cashew",
-      "name": "Creamy Cashew Sauce",
-      "section": "Creamy & Classic",
-      "incomplete": true
-    },
-    {
-      "id": "garlic-aioli",
-      "name": "Garlic Aioli",
-      "section": "Creamy & Classic",
-      "incomplete": true
-    },
-    {
-      "id": "buffalo",
-      "name": "Buffalo Sauce",
-      "section": "Creamy & Classic",
-      "incomplete": true
+      "id": "sa20",
+      "name": "Miso Ginger Sauce",
+      "section": "Asian-inspired",
+      "week": 4,
+      "yields": "~2 cups · 7 servings",
+      "fridge": "5–7 days",
+      "freezer": "⚠",
+      "ingredients": [
+        "½ cup white miso",
+        "½ cup warm water",
+        "¼ cup rice vinegar",
+        "¼ cup maple syrup",
+        "2 tbsp toasted sesame oil",
+        "2 tbsp fresh ginger, grated",
+        "3 cloves garlic, minced",
+        "2 tbsp lime juice",
+        "2 tbsp tahini",
+        "¼ tsp black pepper",
+        "1–2 tbsp water as needed"
+      ],
+      "directions": [
+        "Whisk miso and warm water until smooth.",
+        "Add vinegar, maple syrup, sesame oil, ginger, garlic, lime juice, and tahini.",
+        "Whisk until smooth.",
+        "Add additional water as needed."
+      ],
+      "pairings": [
+        "Tofu",
+        "Tempeh",
+        "Noodles",
+        "Roasted vegetables",
+        "Broccoli",
+        "Mushrooms",
+        "Cabbage",
+        "Rice bowls"
+      ]
     }
   ]
 };
