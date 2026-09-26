@@ -128,7 +128,9 @@
   @media (max-width:520px){ .sauce-cols{ grid-template-columns:1fr; } }
   .sauce-cols h4{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 6px; }
   .pill-wrap{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
-  .pill{ font-size:11px; background:var(--surface-2); padding:3px 9px; border-radius:99px; color:var(--text-muted); }
+  .pill{ font-size:11px; background:var(--surface-2); padding:3px 9px; border-radius:99px; color:var(--text-muted); border:0; font-family:inherit; }
+  button.pill{ cursor:pointer; }
+  button.pill:hover{ color:var(--accent); background:var(--accent-soft); }
   .section-heading{ font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); font-weight:700;
     margin:26px 0 10px; }
   .section-heading:first-child{ margin-top:0; }
@@ -298,8 +300,17 @@ function portionsFor(meal){
 }
 function ingredientLine(ing){
   const sauce = sauceByName(ing);
-  return sauce ? ing.replace(sauce.name, `<a href="#" data-sauce="${sauce.id}" class="sauce-jump">${esc(sauce.name)}</a>`) : esc(ing);
+  if(!sauce) return esc(ing);
+  const i = ing.toLowerCase().indexOf(sauce.name.toLowerCase()), j = i + sauce.name.length;
+  return esc(ing.slice(0,i)) + `<a href="#" data-sauce="${sauce.id}" class="sauce-jump">${esc(ing.slice(i,j))}</a>` + esc(ing.slice(j));
 }
+// Meals that call for a sauce, either in their ingredient lines or as their listed sauce.
+function mealsUsingSauce(s){
+  const n = s.name.toLowerCase();
+  return ALL_MAIN.filter(m => (m.sauce||'').toLowerCase()===n ||
+    [...(m.weightLoss||[]), ...(m.weightGain||[])].some(l => l.toLowerCase().includes(n)));
+}
+const CAT_SHORT = { breakfast:'B', lunch:'L', dinner:'D' };
 
 /* ---------------- meal grid (breakfast/lunch/dinner) ---------------- */
 const weeksIn = list => Math.max(1, ...list.map(m=>m.week||1));
@@ -386,7 +397,7 @@ function renderSnacks(){
     card: s=>`
       <div class="card" data-id="${s.id}">
         <h3>${esc(s.name)}</h3>
-        <div class="tag-row"><span class="tag">Bulk: ${esc(s.bulk)}</span><span class="tag">Keeps ${esc(s.storage)}</span></div>
+        <div class="tag-row">${(s.roles||[]).map(r=>`<span class="tag sauce">${esc(r)}</span>`).join('')}<span class="tag">Bulk: ${esc(s.bulk)}</span><span class="tag">Keeps ${esc(s.storage)}</span></div>
         <div class="portion-line">Loss: ${esc(s.weightLoss)} · Gain: ${esc(s.weightGain)}</div>
       </div>`,
     emptyText: 'No snacks match your search.', onOpen: openSnackModal
@@ -412,7 +423,7 @@ function openSnackModal(id){
 function renderSauces(){
   const sections = [...new Set(D.SAUCES.map(s=>s.section))];
   $('#main').innerHTML = `
-    ${pageHead('sauces',`The ${D.SAUCES.length} Sauces`,'One sauce swap turns the same protein + carb + vegetable base into a completely different meal. Every recipe above links back here.')}
+    ${pageHead('sauces',`The ${D.SAUCES.length} Sauces`,'One sauce swap turns the same protein + carb + vegetable base into a completely different meal. Every recipe above links back here, and each sauce lists the meals that use it.')}
     ${sections.map(sec => `
       <div class="section-heading">${esc(sec)}</div>
       <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
@@ -424,16 +435,20 @@ function renderSauces(){
     if(el){ el.scrollIntoView({block:'center'}); el.style.outline='2px solid var(--accent)'; }
     state.jumpSauce = null;
   }
+  $$('.meal-jump', $('#main')).forEach(b=> b.onclick = ()=> openMealModal(b.dataset.id));
 }
 function sauceCard(s){
+  const used = mealsUsingSauce(s);
+  const meta = [s.yields&&`Makes ${esc(s.yields)}`, s.fridge&&`Fridge ${esc(s.fridge)}`, s.freezer&&`Freezer ${esc(s.freezer)}`].filter(Boolean);
   return `<div class="sauce-card" id="sc-${s.id}">
     <h3>${esc(s.name)}</h3>
-    <div class="sauce-meta">Makes ${esc(s.yields)} · Fridge ${esc(s.fridge)} · Freezer ${esc(s.freezer)}</div>
+    <div class="sauce-meta">Used in ${used.length} meal${used.length===1?'':'s'}${meta.length?' · '+meta.join(' · '):''}</div>
+    ${s.incomplete ? `<div class="prep-note">Recipe not added yet: the source documents name this sauce but don't include its ingredients or directions.</div>` : `
     <div class="sauce-cols">
-      <div><h4>Ingredients</h4><ul class="ing-list">${s.ingredients.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
-      <div><h4>Directions</h4><ul class="ing-list">${s.directions.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
-    </div>
-    <div class="pill-wrap">${s.pairings.map(p=>`<span class="pill">${esc(p)}</span>`).join('')}</div>
+      <div><h4>Ingredients</h4><ul class="ing-list">${(s.ingredients||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+      <div><h4>Directions</h4><ul class="ing-list">${(s.directions||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+    </div>`}
+    <div class="pill-wrap">${used.map(m=>`<button class="pill meal-jump" data-id="${m.id}" title="${esc(m.cat)}">${CAT_SHORT[m.cat]}${m.id.slice(1)} · ${esc(m.name)}</button>`).join('')}</div>
     ${s.note?`<div class="prep-note" style="margin-top:10px;">${esc(s.note)}</div>`:''}
   </div>`;
 }
@@ -443,6 +458,7 @@ function renderOverview(){
   const pf = D.PORTION_FRAMEWORK;
   const nB = D.BREAKFASTS.length, nL = D.LUNCHES.length, nD = D.DINNERS.length, nS = D.SNACKS.length, nSa = D.SAUCES.length;
   const incomplete = ALL_MAIN.filter(m=>m.incomplete);
+  const saucesMissing = D.SAUCES.filter(s=>s.incomplete).length;
   $('#main').innerHTML = `
     ${pageHead('the system','Sprout Ledger',`A working base for the ${nB+nL+nD+nS+nSa}-item vegan meal-prep system: ${nB} breakfasts, ${nL} lunches, ${nD} dinners, ${nS} snacks and ${nSa} interchangeable sauces, built around one mix-and-match formula.`)}
     <div class="stat-grid">
@@ -450,7 +466,7 @@ function renderOverview(){
       <div class="stat"><div class="num mono">${nL}</div><div class="lbl">Lunches · ${weeksIn(D.LUNCHES)}-week rotation</div></div>
       <div class="stat"><div class="num mono">${nD}</div><div class="lbl">Dinners · ${weeksIn(D.DINNERS)}-week rotation</div></div>
       <div class="stat"><div class="num mono">${nS}</div><div class="lbl">Snacks · flexible rotation</div></div>
-      <div class="stat"><div class="num mono">${nSa}</div><div class="lbl">Sauces · flavor engine</div></div>
+      <div class="stat"><div class="num mono">${nSa}</div><div class="lbl">Sauces · flavor engine${saucesMissing ? (saucesMissing===nSa ? ' · recipes pending' : ` · ${nSa-saucesMissing} of ${nSa} recipes added`) : ''}</div></div>
     </div>
 
     <h2 style="font-size:17px;margin-bottom:10px;">The mix-and-match formula</h2>
@@ -480,7 +496,7 @@ function renderOverview(){
 
     <div style="margin-top:26px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
       <strong style="font-size:13.5px;">Where the data comes from</strong>
-      <p style="color:var(--text-muted);font-size:13px;margin:6px 0 0;">Every meal, snack and sauce here was digitized from the original planning documents — this page reads it from a single <code class="mono">MEAL_DATA</code> object (see <code class="mono">data.js</code>), so replacing or extending the system means editing data, not layout.${incomplete.length ? ` Flagged incomplete (ingredient list not in the source yet): ${incomplete.map(m=>esc(m.name)).join(', ')}.` : ''}</p>
+      <p style="color:var(--text-muted);font-size:13px;margin:6px 0 0;">Every meal, snack and sauce here was digitized from the original planning documents — this page reads it from a single <code class="mono">MEAL_DATA</code> object (see <code class="mono">data.js</code>), so replacing or extending the system means editing data, not layout.${saucesMissing ? ` ${saucesMissing} of ${nSa} sauce recipes aren't in the source documents yet; their names and the meals that use them are listed on the Sauces page.` : ''}${incomplete.length ? ` Flagged incomplete (ingredient list not in the source yet): ${incomplete.map(m=>esc(m.name)).join(', ')}.` : ''}</p>
     </div>
   `;
 }
@@ -546,7 +562,7 @@ const CATEGORY_KEYWORDS = [
   ['Protein', ['tofu','tempeh','chickpea','black bean','white bean','lentil','edamame','jackfruit','cannellini','protein powder','falafel']],
   ['Grains & Starches', ['rice','quinoa','pasta','noodle','couscous','polenta','potato','bread','tortilla','wrap','bagel','oat','naan','pita','flatbread']],
   ['Nuts, Seeds & Fats', ['almond','walnut','cashew','peanut','tahini','seed','olive oil','coconut','sesame oil']],
-  ['Pantry & Condiments', ['nutritional yeast','vinegar','syrup','flour','baking','vanilla','salt','cornstarch','soy sauce','tamari','miso','vegan cheese','vegan mayo','mustard','cumin','paprika','cayenne','oregano','pepper flakes','sriracha','chili','gochujang','hot sauce']]
+  ['Pantry & Condiments', ['nutritional yeast','cinnamon','cocoa','plant milk','soy milk','turmeric','vinegar','syrup','flour','baking','vanilla','salt','cornstarch','soy sauce','tamari','miso','vegan cheese','vegan mayo','mustard','cumin','paprika','cayenne','oregano','pepper flakes','sriracha','chili','gochujang','hot sauce']]
 ];
 function categorize(line){
   const l = line.toLowerCase();
@@ -597,8 +613,8 @@ function renderGrocery(){
     ${sauces.length===0 ? '<p class="empty">No sauces selected.</p>' : `
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
       ${sauces.map(s=>`<div class="card" style="cursor:default;"><h3>${esc(s.name)}</h3>
-        <div class="portion-line">Makes ${esc(s.yields)}</div>
-        <ul class="ing-list">${s.ingredients.slice(0,4).map(i=>`<li>${esc(i)}</li>`).join('')}${s.ingredients.length>4?`<li style="opacity:.6">+${s.ingredients.length-4} more — see Sauces tab</li>`:''}</ul>
+        <div class="portion-line">${s.incomplete ? 'Recipe not added yet' : `Makes ${esc(s.yields||'—')}`}</div>
+        <ul class="ing-list">${(s.ingredients||[]).slice(0,4).map(i=>`<li>${esc(i)}</li>`).join('')}${(s.ingredients||[]).length>4?`<li style="opacity:.6">+${s.ingredients.length-4} more — see Sauces tab</li>`:''}</ul>
       </div>`).join('')}
     </div>`}
     <p style="color:var(--text-muted);font-size:12.5px;margin-top:14px;">Quantities are counted as "how many recipes call for this item," not summed weights — recipes use inconsistent units (cups vs. cloves vs. tbsp), so treat the × count as a shopping cue, not a precise total.</p>
