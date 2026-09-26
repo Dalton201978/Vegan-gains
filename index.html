@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprout Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#FAF6EE; --surface:#FFFFFF; --surface-2:#F1EBDC; --surface-3:#E9E1CC;
+    --text:#26251E; --text-muted:#726C5C; --border:#E3DAC2;
+    --accent:#3E6B49; --accent-ink:#FFFFFF; --accent-soft:#E4EEE1;
+    --gain:#B9622C; --gain-soft:#F5E4D5;
+    --loss:#3E6B49; --loss-soft:#E4EEE1;
+    --shadow: 0 1px 2px rgba(30,26,10,.06), 0 6px 16px -8px rgba(30,26,10,.12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#181A15; --surface:#212319; --surface-2:#282A1F; --surface-3:#333524;
+      --text:#EEEADE; --text-muted:#A6A08C; --border:#3A3C2C;
+      --accent:#7FBB8B; --accent-ink:#12180F; --accent-soft:#26301F;
+      --gain:#E3A26C; --gain-soft:#332417;
+      --loss:#7FBB8B; --loss-soft:#1E2A1A;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#181A15; --surface:#212319; --surface-2:#282A1F; --surface-3:#333524;
+    --text:#EEEADE; --text-muted:#A6A08C; --border:#3A3C2C;
+    --accent:#7FBB8B; --accent-ink:#12180F; --accent-soft:#26301F;
+    --gain:#E3A26C; --gain-soft:#332417;
+    --loss:#7FBB8B; --loss-soft:#1E2A1A;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{ margin:0; }
+  body{ background:var(--bg); color:var(--text); font-family:'Karla',system-ui,sans-serif; padding-inline:0; }
+  h1,h2,h3,.display{ font-family:'Fraunces',Georgia,serif; text-wrap:balance; }
+  .mono{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; }
+  a{ color:var(--accent); }
+  button{ font-family:inherit; }
+
+  /* ---------- shell ---------- */
+  .shell{ display:flex; min-height:100%; }
+  .sidebar{
+    width:236px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
+    padding:20px 14px calc(20px + env(safe-area-inset-bottom,0px)); position:sticky; top:0;
+    height:100vh; overflow-y:auto; display:flex; flex-direction:column; gap:18px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding:2px 6px 4px; }
+  .brand-mark{ width:30px; height:30px; border-radius:8px; background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .brand-name{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; line-height:1.1; }
+  .brand-sub{ font-size:11px; color:var(--text-muted); }
+
+  .nav{ display:flex; flex-direction:column; gap:2px; }
+  .nav button{
+    all:unset; cursor:pointer; padding:9px 10px; border-radius:8px; font-size:13.5px; font-weight:600;
+    color:var(--text-muted); display:flex; align-items:center; gap:9px; justify-content:space-between;
+  }
+  .nav button .cnt{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:500; color:var(--text-muted);
+    background:var(--surface-2); border-radius:99px; padding:1px 7px; }
+  .nav button:hover{ background:var(--surface-2); color:var(--text); }
+  .nav button.active{ background:var(--accent-soft); color:var(--accent); }
+  .nav button.active .cnt{ background:transparent; color:var(--accent); }
+  .nav-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted);
+    padding:10px 10px 2px; }
+
+  .goal-toggle{ display:flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px; }
+  .goal-toggle button{ all:unset; cursor:pointer; flex:1; text-align:center; padding:7px 4px; border-radius:8px;
+    font-size:12px; font-weight:700; color:var(--text-muted); }
+  .goal-toggle button.on.loss{ background:var(--loss-soft); color:var(--loss); }
+  .goal-toggle button.on.gain{ background:var(--gain-soft); color:var(--gain); }
+
+  .main{ flex:1; min-width:0; padding:28px clamp(16px,4vw,44px) 60px; }
+  .page-head{ margin-bottom:22px; }
+  .eyebrow{ font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); font-weight:700; }
+  .page-head h1{ font-size:clamp(24px,3vw,32px); margin:4px 0 6px; font-weight:600; }
+  .page-head p{ color:var(--text-muted); max-width:62ch; font-size:14.5px; line-height:1.55; margin:0; }
+
+  /* ---------- controls ---------- */
+  .toolbar{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center; }
+  .search{ flex:1; min-width:180px; position:relative; }
+  .search input{ width:100%; padding:9px 12px 9px 32px; border-radius:9px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:13.5px; }
+  .search svg{ position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.5; }
+  select, .btn{ border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:9px;
+    padding:9px 12px; font-size:13px; cursor:pointer; font-weight:600; }
+  .btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .btn.ghost{ background:transparent; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* ---------- grid / cards ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 15px;
+    cursor:pointer; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px; }
+  .card:hover{ border-color:var(--accent); }
+  .card h3{ font-size:15px; margin:0; font-weight:600; line-height:1.3; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:5px; }
+  .tag{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; background:var(--surface-2); color:var(--text-muted); }
+  .tag.sauce{ background:var(--accent-soft); color:var(--accent); }
+  .card .portion-line{ font-size:12px; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; }
+  .empty{ color:var(--text-muted); font-size:13.5px; padding:30px 0; text-align:center; }
+
+  /* ---------- modal ---------- */
+  .overlay{ position:fixed; inset:0; background:rgba(20,18,10,.45); display:flex; align-items:flex-start;
+    justify-content:center; padding:5vh 16px; overflow-y:auto; z-index:50; }
+  .modal{ background:var(--surface); border-radius:16px; max-width:560px; width:100%; padding:26px 26px 24px;
+    box-shadow:0 20px 60px -20px rgba(0,0,0,.4); border:1px solid var(--border); }
+  .modal h2{ margin:0 0 4px; font-size:22px; }
+  .modal .close{ all:unset; float:right; cursor:pointer; color:var(--text-muted); font-size:20px; line-height:1; padding:2px 6px; }
+  .modal-section{ margin-top:16px; }
+  .modal-section h4{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin:0 0 8px; }
+  .ing-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
+  .ing-list li{ font-size:13.5px; padding:6px 10px; background:var(--surface-2); border-radius:7px; display:flex; gap:8px; }
+  .ing-list li::before{ content:"–"; color:var(--text-muted); }
+  .prep-note{ font-size:13px; color:var(--text-muted); background:var(--accent-soft); padding:10px 12px; border-radius:9px;
+    border-left:3px solid var(--accent); }
+
+  /* ---------- sauce cards ---------- */
+  .sauce-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
+  .sauce-card h3{ margin:0 0 2px; font-size:16px; }
+  .sauce-meta{ font-size:11.5px; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; margin-bottom:10px; }
+  .sauce-cols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .sauce-cols{ grid-template-columns:1fr; } }
+  .sauce-cols h4{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 6px; }
+  .pill-wrap{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+  .pill{ font-size:11px; background:var(--surface-2); padding:3px 9px; border-radius:99px; color:var(--text-muted); }
+  .section-heading{ font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); font-weight:700;
+    margin:26px 0 10px; }
+  .section-heading:first-child{ margin-top:0; }
+
+  /* ---------- overview ---------- */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:24px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:left; }
+  .stat .num{ font-family:'Fraunces',serif; font-size:30px; font-weight:600; line-height:1; }
+  .stat .lbl{ font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .flow{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:14px; }
+  .flow .node{ background:var(--surface-2); border-radius:9px; padding:8px 14px; font-size:12.5px; font-weight:700; }
+  .flow .arrow{ color:var(--text-muted); }
+  table.framework{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  table.framework th, table.framework td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+  table.framework th{ color:var(--text-muted); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+
+  /* ---------- plan builder ---------- */
+  .plan-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .plan-grid{ grid-template-columns:1fr; } }
+  .plan-col{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .plan-col h4{ margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  .slot-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .slot-row span{ font-size:11px; width:20px; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; flex-shrink:0; }
+  .slot-row select{ flex:1; padding:7px 8px; font-size:12.5px; }
+  .check-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin-top:10px; }
+  .check-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; background:var(--surface-2); padding:6px 9px; border-radius:8px; cursor:pointer; }
+  .check-item input{ accent-color:var(--accent); }
+  .week-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:12.5px; }
+  .week-table th, .week-table td{ border:1px solid var(--border); padding:8px 9px; text-align:left; vertical-align:top; }
+  .week-table th{ background:var(--surface-2); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); }
+
+  /* ---------- grocery ---------- */
+  .grocery-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+  .grocery-col{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  .grocery-col h4{ margin:0 0 10px; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
+  .grocery-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .grocery-col li{ font-size:13px; display:flex; justify-content:space-between; gap:8px; border-bottom:1px dashed var(--border); padding-bottom:6px; }
+  .grocery-col li .qty{ color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:11.5px; white-space:nowrap; }
+
+  /* ---------- mix & match ---------- */
+  .mm-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+  @media (max-width:900px){ .mm-grid{ grid-template-columns:repeat(2,1fr); } }
+  .mm-col h4{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 8px; }
+  .mm-option{ display:block; width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid transparent;
+    background:var(--surface-2); font-size:12.5px; margin-bottom:5px; cursor:pointer; }
+  .mm-option.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .mm-result{ margin-top:20px; padding:18px; background:var(--accent-soft); border-radius:14px; border:1px solid var(--accent); }
+  .mm-result .display{ font-size:19px; margin-bottom:4px; }
+
+  @media (max-width:720px){
+    .shell{ flex-direction:column; }
+    .sidebar{ width:auto; height:auto; position:static; border-right:0; border-bottom:1px solid var(--border); }
+  }
+
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🌱</div>
+      <div>
+        <div class="brand-name">Sprout Ledger</div>
+        <div class="brand-sub">Vegan meal-prep system</div>
+      </div>
+    </div>
+
+    <div class="goal-toggle" role="group" aria-label="Portion goal">
+      <button id="goalLoss" class="on loss">Weight Loss</button>
+      <button id="goalGain" class="gain">Weight Gain</button>
+    </div>
+
+    <div class="nav-group-label">Browse</div>
+    <div class="nav" id="navBrowse"></div>
+
+    <div class="nav-group-label">Plan</div>
+    <div class="nav" id="navPlan"></div>
+  </nav>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div id="modalRoot"></div>
+
+<script src="data.js"></script>
+<script>
+/* =====================================================================
+   Loaded from data.js (published alongside this page): window.MEAL_DATA
+   ===================================================================== */
+const D = window.MEAL_DATA;
+if(!D){ document.getElementById('main').innerHTML = '<p style="padding:40px">Could not load <code>data.js</code>.</p>'; throw new Error('MEAL_DATA missing'); }
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------- persisted, per-viewer state ---------------- */
+function defaultState(){
+  return {
+    goal:'loss',
+    route:'overview',
+    plan:{ breakfasts:[null,null,null,null,null], lunches:[null,null,null,null,null], dinners:[null,null,null,null,null],
+           snacks:[], sauces:[] },
+    mixmatch:{ protein:null, carb:null, vegetable:null, fat:null, sauce:null }
+  };
+}
+function loadState(){
+  const d = defaultState();
+  try{
+    const raw = localStorage.getItem('sproutLedgerState');
+    if(raw){
+      const s = JSON.parse(raw);
+      return { ...d, ...s, plan:{ ...d.plan, ...(s.plan||{}) }, mixmatch:{ ...d.mixmatch, ...(s.mixmatch||{}) } };
+    }
+  }catch(e){}
+  return d;
+}
+let state = loadState();
+function saveState(){
+  try{ localStorage.setItem('sproutLedgerState', JSON.stringify(state)); }catch(e){}
+}
+
+/* ---------------- lookups ---------------- */
+const ALL_MAIN = [
+  ...D.BREAKFASTS.map(m=>({...m, cat:'breakfast'})),
+  ...D.LUNCHES.map(m=>({...m, cat:'lunch'})),
+  ...D.DINNERS.map(m=>({...m, cat:'dinner'}))
+];
+function byId(id){ return ALL_MAIN.find(m=>m.id===id) || D.SNACKS.find(s=>s.id===id); }
+function sauceByName(name){ return D.SAUCES.find(s => name && name.toLowerCase().includes(s.name.toLowerCase())); }
+
+/* ---------------- routing / nav ---------------- */
+const ROUTES = {
+  overview:  {label:'Overview', group:'browse'},
+  breakfast: {label:'Breakfast', group:'browse', count:D.BREAKFASTS.length},
+  lunch:     {label:'Lunch', group:'browse', count:D.LUNCHES.length},
+  dinner:    {label:'Dinner', group:'browse', count:D.DINNERS.length},
+  snacks:    {label:'Snacks', group:'browse', count:D.SNACKS.length},
+  sauces:    {label:'Sauces', group:'browse', count:D.SAUCES.length},
+  mixmatch:  {label:'Mix & Match', group:'plan'},
+  planner:   {label:'Weekly Plan Builder', group:'plan'},
+  grocery:   {label:'Grocery List', group:'plan'}
+};
+
+function renderNav(){
+  const browse = $('#navBrowse'), plan = $('#navPlan');
+  browse.innerHTML = ''; plan.innerHTML = '';
+  Object.entries(ROUTES).forEach(([key,r])=>{
+    const btn = document.createElement('button');
+    btn.className = state.route===key ? 'active' : '';
+    btn.innerHTML = `<span>${esc(r.label)}</span>${r.count?`<span class="cnt">${r.count}</span>`:''}`;
+    btn.onclick = ()=>{ state.route=key; saveState(); render(); };
+    (r.group==='browse'?browse:plan).appendChild(btn);
+  });
+  $('#goalLoss').classList.toggle('on', state.goal==='loss');
+  $('#goalGain').classList.toggle('on', state.goal==='gain');
+}
+$('#goalLoss').onclick = ()=>{ state.goal='loss'; saveState(); render(); };
+$('#goalGain').onclick = ()=>{ state.goal='gain'; saveState(); render(); };
+
+/* ---------------- shared bits ---------------- */
+function pageHead(eyebrow, title, desc){
+  return `<div class="page-head"><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1><p>${desc}</p></div>`;
+}
+function portionsFor(meal){
+  return state.goal==='loss' ? (meal.weightLoss||[]) : (meal.weightGain||[]);
+}
+function ingredientLine(ing){
+  const sauce = sauceByName(ing);
+  return sauce ? ing.replace(sauce.name, `<a href="#" data-sauce="${sauce.id}" class="sauce-jump">${esc(sauce.name)}</a>`) : esc(ing);
+}
+
+/* ---------------- meal grid (breakfast/lunch/dinner) ---------------- */
+const weeksIn = list => Math.max(1, ...list.map(m=>m.week||1));
+const CATEGORY_INFO = {
+  breakfast: { list: D.BREAKFASTS, subtitle: `${weeksIn(D.BREAKFASTS)}-week rotation, 5 new breakfasts a week.` },
+  lunch:     { list: D.LUNCHES,    subtitle: `${weeksIn(D.LUNCHES)}-week rotation, 5 new lunches a week — built for containers that travel.` },
+  dinner:    { list: D.DINNERS,    subtitle: `${weeksIn(D.DINNERS)}-week rotation, 5 new dinners a week — the most substantial portions in the system.` }
+};
+const SEARCH_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+
+// Renders a searchable card grid. Typing only re-renders the grid, so the input keeps focus.
+function renderSearchPage({ head, stateKey, placeholder, list, card, emptyText, onOpen }){
+  $('#main').innerHTML = `
+    ${head}
+    <div class="toolbar">
+      <div class="search">${SEARCH_ICON}
+        <input id="searchInput" placeholder="${esc(placeholder)}" value="${esc(state[stateKey]||'')}">
+      </div>
+      <span class="tag" id="searchCount" style="align-self:center"></span>
+    </div>
+    <div class="grid" id="searchGrid"></div>`;
+  const fill = ()=>{
+    const q = (state[stateKey]||'').toLowerCase();
+    const filtered = list.filter(x => x.name.toLowerCase().includes(q));
+    $('#searchCount').textContent = `${filtered.length} of ${list.length}`;
+    $('#searchGrid').innerHTML = filtered.map(card).join('') || `<div class="empty">${esc(emptyText)}</div>`;
+    $$('.card', $('#searchGrid')).forEach(c=> c.onclick = ()=> onOpen(c.dataset.id));
+  };
+  $('#searchInput').oninput = (e)=>{ state[stateKey] = e.target.value; fill(); };
+  fill();
+}
+
+function renderMealCategory(key){
+  const { list, subtitle } = CATEGORY_INFO[key];
+  renderSearchPage({
+    head: pageHead(key, key[0].toUpperCase()+key.slice(1), subtitle),
+    stateKey: `q_${key}`, placeholder: `Search ${key}s…`, list,
+    card: mealCard, emptyText: 'No meals match your search.', onOpen: openMealModal
+  });
+}
+function mealCard(m){
+  const portions = portionsFor(m);
+  const first = portions[0] || (m.incomplete ? 'Recipe details coming soon' : '');
+  return `<div class="card" data-id="${m.id}">
+    <h3>${m.week?`Wk ${m.week} · `:''}${esc(m.name)}</h3>
+    <div class="tag-row">
+      ${m.protein?`<span class="tag">${esc(m.protein)}</span>`:''}
+      ${m.carb?`<span class="tag">${esc(m.carb)}</span>`:''}
+      ${m.sauce?`<span class="tag sauce">${esc(m.sauce)}</span>`:''}
+    </div>
+    <div class="portion-line">${esc(first)}${portions.length>1?` +${portions.length-1} more`:''}</div>
+  </div>`;
+}
+
+function openMealModal(id){
+  const m = byId(id);
+  if(!m) return;
+  const portions = portionsFor(m);
+  const root = $('#modalRoot');
+  root.innerHTML = `<div class="overlay" id="ov">
+    <div class="modal">
+      <button class="close" id="closeModal">&times;</button>
+      <div class="eyebrow">${m.protein?esc(m.protein)+' · ':''}${m.carb?esc(m.carb):''}</div>
+      <h2>${esc(m.name)}</h2>
+      ${m.incomplete? `<p style="color:var(--text-muted);font-size:13.5px;">This recipe's ingredient list wasn't captured in the source notes yet — use the Mix &amp; Match tool to build your own version.</p>` : `
+      <div class="modal-section">
+        <h4>Ingredients — ${state.goal==='loss'?'Weight Loss':'Weight Gain'} portion</h4>
+        <ul class="ing-list">${portions.map(i=>`<li>${ingredientLine(i)}</li>`).join('')}</ul>
+      </div>`}
+      ${m.prep ? `<div class="modal-section"><h4>Meal Prep</h4><div class="prep-note">${esc(m.prep)}</div></div>` : ''}
+      ${m.note ? `<div class="modal-section"><h4>Note</h4><div class="prep-note">${esc(m.note)}</div></div>` : ''}
+    </div>
+  </div>`;
+  $('#ov').onclick = (e)=>{ if(e.target.id==='ov') root.innerHTML=''; };
+  $('#closeModal').onclick = ()=> root.innerHTML='';
+  $$('.sauce-jump', root).forEach(a=> a.onclick = (e)=>{ e.preventDefault(); root.innerHTML=''; state.route='sauces'; state.jumpSauce=a.dataset.sauce; saveState(); render(); });
+}
+
+/* ---------------- snacks ---------------- */
+function renderSnacks(){
+  renderSearchPage({
+    head: pageHead('snacks','Snacks',`${D.SNACKS.length} bulk-prep snacks, grouped by role — high-protein, high-volume, high-calorie, and make-ahead freezer options.`),
+    stateKey: 'q_snacks', placeholder: 'Search snacks…', list: D.SNACKS,
+    card: s=>`
+      <div class="card" data-id="${s.id}">
+        <h3>${esc(s.name)}</h3>
+        <div class="tag-row"><span class="tag">Bulk: ${esc(s.bulk)}</span><span class="tag">Keeps ${esc(s.storage)}</span></div>
+        <div class="portion-line">Loss: ${esc(s.weightLoss)} · Gain: ${esc(s.weightGain)}</div>
+      </div>`,
+    emptyText: 'No snacks match your search.', onOpen: openSnackModal
+  });
+}
+function openSnackModal(id){
+  const s = D.SNACKS.find(x=>x.id===id);
+  const root = $('#modalRoot');
+  root.innerHTML = `<div class="overlay" id="ov"><div class="modal">
+    <button class="close" id="closeModal">&times;</button>
+    <div class="eyebrow">Bulk: ${esc(s.bulk)} · Keeps ${esc(s.storage)}</div>
+    <h2>${esc(s.name)}</h2>
+    <div class="modal-section"><h4>Ingredients</h4><ul class="ing-list">${s.ingredients.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+    <div class="modal-section"><h4>Directions</h4><ul class="ing-list">${s.directions.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+    <div class="modal-section"><h4>Serving Size</h4><div class="prep-note">Weight loss: ${esc(s.weightLoss)} &nbsp;·&nbsp; Weight gain: ${esc(s.weightGain)}</div></div>
+    ${s.note?`<div class="modal-section"><h4>Note</h4><div class="prep-note">${esc(s.note)}</div></div>`:''}
+  </div></div>`;
+  $('#ov').onclick = (e)=>{ if(e.target.id==='ov') root.innerHTML=''; };
+  $('#closeModal').onclick = ()=> root.innerHTML='';
+}
+
+/* ---------------- sauces ---------------- */
+function renderSauces(){
+  const sections = [...new Set(D.SAUCES.map(s=>s.section))];
+  $('#main').innerHTML = `
+    ${pageHead('sauces',`The ${D.SAUCES.length} Sauces`,'One sauce swap turns the same protein + carb + vegetable base into a completely different meal. Every recipe above links back here.')}
+    ${sections.map(sec => `
+      <div class="section-heading">${esc(sec)}</div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
+        ${D.SAUCES.filter(s=>s.section===sec).map(sauceCard).join('')}
+      </div>`).join('')}
+  `;
+  if(state.jumpSauce){
+    const el = document.getElementById('sc-'+state.jumpSauce);
+    if(el){ el.scrollIntoView({block:'center'}); el.style.outline='2px solid var(--accent)'; }
+    state.jumpSauce = null;
+  }
+}
+function sauceCard(s){
+  return `<div class="sauce-card" id="sc-${s.id}">
+    <h3>${esc(s.name)}</h3>
+    <div class="sauce-meta">Makes ${esc(s.yields)} · Fridge ${esc(s.fridge)} · Freezer ${esc(s.freezer)}</div>
+    <div class="sauce-cols">
+      <div><h4>Ingredients</h4><ul class="ing-list">${s.ingredients.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+      <div><h4>Directions</h4><ul class="ing-list">${s.directions.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>
+    </div>
+    <div class="pill-wrap">${s.pairings.map(p=>`<span class="pill">${esc(p)}</span>`).join('')}</div>
+    ${s.note?`<div class="prep-note" style="margin-top:10px;">${esc(s.note)}</div>`:''}
+  </div>`;
+}
+
+/* ---------------- overview ---------------- */
+function renderOverview(){
+  const pf = D.PORTION_FRAMEWORK;
+  const nB = D.BREAKFASTS.length, nL = D.LUNCHES.length, nD = D.DINNERS.length, nS = D.SNACKS.length, nSa = D.SAUCES.length;
+  const incomplete = ALL_MAIN.filter(m=>m.incomplete);
+  $('#main').innerHTML = `
+    ${pageHead('the system','Sprout Ledger',`A working base for the ${nB+nL+nD+nS+nSa}-item vegan meal-prep system: ${nB} breakfasts, ${nL} lunches, ${nD} dinners, ${nS} snacks and ${nSa} interchangeable sauces, built around one mix-and-match formula.`)}
+    <div class="stat-grid">
+      <div class="stat"><div class="num mono">${nB}</div><div class="lbl">Breakfasts · ${weeksIn(D.BREAKFASTS)}-week rotation</div></div>
+      <div class="stat"><div class="num mono">${nL}</div><div class="lbl">Lunches · ${weeksIn(D.LUNCHES)}-week rotation</div></div>
+      <div class="stat"><div class="num mono">${nD}</div><div class="lbl">Dinners · ${weeksIn(D.DINNERS)}-week rotation</div></div>
+      <div class="stat"><div class="num mono">${nS}</div><div class="lbl">Snacks · flexible rotation</div></div>
+      <div class="stat"><div class="num mono">${nSa}</div><div class="lbl">Sauces · flavor engine</div></div>
+    </div>
+
+    <h2 style="font-size:17px;margin-bottom:10px;">The mix-and-match formula</h2>
+    <div class="flow">
+      <div class="node">Protein</div><div class="arrow">+</div>
+      <div class="node">Carb / Base</div><div class="arrow">+</div>
+      <div class="node">Vegetables</div><div class="arrow">+</div>
+      <div class="node">Sauce</div><div class="arrow">=</div>
+      <div class="node" style="background:var(--accent-soft);color:var(--accent);">Complete Meal</div>
+    </div>
+
+    <h2 style="font-size:17px;margin:24px 0 10px;">Starting portion framework</h2>
+    <div style="overflow-x:auto;">
+    <table class="framework">
+      <tr><th></th><th>Protein</th><th>Starch</th><th>Vegetables</th><th>Sauce</th><th>Fats</th></tr>
+      <tr><td><strong>Weight loss</strong></td><td>${esc(pf.weightLoss.protein)}</td><td>${esc(pf.weightLoss.starch)}</td><td>${esc(pf.weightLoss.vegetables)}</td><td>${esc(pf.weightLoss.sauce)}</td><td>${esc(pf.weightLoss.fats)}</td></tr>
+      <tr><td><strong>Weight gain</strong></td><td>${esc(pf.weightGain.protein)}</td><td>${esc(pf.weightGain.starch)}</td><td>${esc(pf.weightGain.vegetables)}</td><td>${esc(pf.weightGain.sauce)}</td><td>${esc(pf.weightGain.fats)}</td></tr>
+    </table>
+    </div>
+    <p style="color:var(--text-muted);font-size:12.5px;margin-top:8px;">These are starting frameworks, not guarantees of weight change — total intake, activity and individual needs decide the outcome.</p>
+
+    <h2 style="font-size:17px;margin:24px 0 10px;">Core grocery list</h2>
+    <div class="grocery-grid">
+      ${Object.entries(D.CORE_INGREDIENTS).map(([k,v])=>`
+        <div class="grocery-col"><h4>${esc(k)}</h4><ul>${v.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+    </div>
+
+    <div style="margin-top:26px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+      <strong style="font-size:13.5px;">Where the data comes from</strong>
+      <p style="color:var(--text-muted);font-size:13px;margin:6px 0 0;">Every meal, snack and sauce here was digitized from the original planning documents — this page reads it from a single <code class="mono">MEAL_DATA</code> object (see <code class="mono">data.js</code>), so replacing or extending the system means editing data, not layout.${incomplete.length ? ` Flagged incomplete (ingredient list not in the source yet): ${incomplete.map(m=>esc(m.name)).join(', ')}.` : ''}</p>
+    </div>
+  `;
+}
+
+/* ---------------- plan builder ---------------- */
+function renderPlanner(){
+  const p = state.plan;
+  const bOpts = D.BREAKFASTS.filter(m=>!m.incomplete);
+  const lOpts = D.LUNCHES, dOpts = D.DINNERS;
+  const nameOf = id => { const m = id && byId(id); return m ? esc(m.name) : '<span style="color:var(--text-muted)">—</span>'; };
+  const optionHtml = (list, selected) => `<option value="">—</option>` + list.map(m=>`<option value="${m.id}" ${m.id===selected?'selected':''}>${esc(m.name)}</option>`).join('');
+  const slotCol = (title, list, arr, key) => `
+    <div class="plan-col"><h4>${title}</h4>
+      ${arr.map((val,i)=>`<div class="slot-row"><span>${i+1}</span>
+        <select onchange="state.plan.${key}[${i}]=this.value||null; saveState(); renderPlanner();">${optionHtml(list, val)}</select></div>`).join('')}
+    </div>`;
+
+  $('#main').innerHTML = `
+    ${pageHead('plan','Weekly Rotation Builder','Pick 5 breakfasts, 5 lunches, 5 dinners, 3–5 snacks and 3–4 sauces — the same weekly shape the source system recommends. Selections are saved in this browser.')}
+    <div class="plan-grid">
+      ${slotCol('Breakfasts (5)', bOpts, p.breakfasts, 'breakfasts')}
+      ${slotCol('Lunches (5)', lOpts, p.lunches, 'lunches')}
+      ${slotCol('Dinners (5)', dOpts, p.dinners, 'dinners')}
+    </div>
+
+    <h2 style="font-size:15px;margin:22px 0 4px;">Snacks (aim for 3–5)</h2>
+    <div class="check-grid">${D.SNACKS.map(s=>`
+      <label class="check-item"><input type="checkbox" ${p.snacks.includes(s.id)?'checked':''}
+        onchange="toggleArr(state.plan.snacks,'${s.id}',this.checked); saveState();">${esc(s.name)}</label>`).join('')}
+    </div>
+
+    <h2 style="font-size:15px;margin:22px 0 4px;">Sauces (aim for 3–4)</h2>
+    <div class="check-grid">${D.SAUCES.map(s=>`
+      <label class="check-item"><input type="checkbox" ${p.sauces.includes(s.id)?'checked':''}
+        onchange="toggleArr(state.plan.sauces,'${s.id}',this.checked); saveState();">${esc(s.name)}</label>`).join('')}
+    </div>
+
+    <h2 style="font-size:15px;margin:24px 0 8px;">This week at a glance</h2>
+    <div style="overflow-x:auto;">
+    <table class="week-table">
+      <tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr>
+      ${['Mon','Tue','Wed','Thu','Fri'].map((d,i)=>`
+        <tr><td><strong>${d}</strong></td>
+          <td>${nameOf(p.breakfasts[i])}</td>
+          <td>${nameOf(p.lunches[i])}</td>
+          <td>${nameOf(p.dinners[i])}</td>
+        </tr>`).join('')}
+    </table>
+    </div>
+    <p style="color:var(--text-muted);font-size:12.5px;margin-top:8px;">Snacks and sauces rotate freely across the whole week rather than being tied to a single day.</p>
+    <button class="btn primary" style="margin-top:16px;" onclick="state.route='grocery'; saveState(); render();">Generate grocery list →</button>
+  `;
+}
+function toggleArr(arr, id, on){
+  const i = arr.indexOf(id);
+  if(on && i===-1) arr.push(id);
+  if(!on && i>-1) arr.splice(i,1);
+}
+
+/* ---------------- grocery list ---------------- */
+const CATEGORY_KEYWORDS = [
+  ['Produce', ['broccoli','cauliflower','spinach','cabbage','carrot','pepper','onion','mushroom','tomato','cucumber','zucchini','corn','green bean','lettuce','avocado','banana','apple','berr','lemon','lime','garlic','ginger','cilantro','parsley','basil','jalape','plantain','kale','celery','acorn squash']],
+  ['Protein', ['tofu','tempeh','chickpea','black bean','white bean','lentil','edamame','jackfruit','cannellini','protein powder','falafel']],
+  ['Grains & Starches', ['rice','quinoa','pasta','noodle','couscous','polenta','potato','bread','tortilla','wrap','bagel','oat','naan','pita','flatbread']],
+  ['Nuts, Seeds & Fats', ['almond','walnut','cashew','peanut','tahini','seed','olive oil','coconut','sesame oil']],
+  ['Pantry & Condiments', ['nutritional yeast','vinegar','syrup','flour','baking','vanilla','salt','cornstarch','soy sauce','tamari','miso','vegan cheese','vegan mayo','mustard','cumin','paprika','cayenne','oregano','pepper flakes','sriracha','chili','gochujang','hot sauce']]
+];
+function categorize(line){
+  const l = line.toLowerCase();
+  if(sauceByName(line)) return 'Sauces (see recipe for full ingredients)';
+  for(const [cat, words] of CATEGORY_KEYWORDS){
+    if(words.some(w=>l.includes(w))) return cat;
+  }
+  return 'Other';
+}
+function stripQty(line){
+  return line.replace(/^[\d½¼¾⅓⅔⅛\s–\-]+\s*(cups?|tbsp|tsp|oz|lb|cloves?|slices?|servings?|scoop)?\s*/i, '').trim() || line;
+}
+function buildGroceryList(){
+  const p = state.plan;
+  const meals = [
+    ...p.breakfasts.filter(Boolean).map(byId),
+    ...p.lunches.filter(Boolean).map(byId),
+    ...p.dinners.filter(Boolean).map(byId),
+    ...p.snacks.map(id=>D.SNACKS.find(s=>s.id===id))
+  ].filter(Boolean);
+
+  const counts = {};
+  meals.forEach(m=>{
+    const lines = m.ingredients ? m.ingredients : portionsFor(m);
+    (lines||[]).forEach(line=>{
+      const cat = categorize(line);
+      const name = stripQty(line);
+      counts[cat] = counts[cat] || {};
+      counts[cat][name] = (counts[cat][name]||0) + 1;
+    });
+  });
+  const sauces = p.sauces.map(id=>D.SAUCES.find(s=>s.id===id)).filter(Boolean);
+  return { counts, sauces, mealCount: meals.length };
+}
+function renderGrocery(){
+  const { counts, sauces, mealCount } = buildGroceryList();
+  const cats = Object.keys(counts);
+  $('#main').innerHTML = `
+    ${pageHead('plan','Grocery List', `Aggregated from ${mealCount} selected meal${mealCount===1?'':'s'} in your Weekly Rotation Builder, using ${state.goal==='loss'?'weight-loss':'weight-gain'} portions. Build your plan first if this looks empty.`)}
+    ${mealCount===0 ? `<div class="empty">No meals selected yet. <a href="#" id="goPlanner">Go build your weekly plan →</a></div>` : `
+    <div class="grocery-grid">
+      ${cats.map(cat=>`
+        <div class="grocery-col"><h4>${esc(cat)}</h4>
+          <ul>${Object.entries(counts[cat]).sort((a,b)=>b[1]-a[1]).map(([name,n])=>`<li><span>${esc(name)}</span><span class="qty">×${n}</span></li>`).join('')}</ul>
+        </div>`).join('')}
+    </div>
+    <h2 style="font-size:15px;margin:24px 0 10px;">Sauces to batch this week</h2>
+    ${sauces.length===0 ? '<p class="empty">No sauces selected.</p>' : `
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+      ${sauces.map(s=>`<div class="card" style="cursor:default;"><h3>${esc(s.name)}</h3>
+        <div class="portion-line">Makes ${esc(s.yields)}</div>
+        <ul class="ing-list">${s.ingredients.slice(0,4).map(i=>`<li>${esc(i)}</li>`).join('')}${s.ingredients.length>4?`<li style="opacity:.6">+${s.ingredients.length-4} more — see Sauces tab</li>`:''}</ul>
+      </div>`).join('')}
+    </div>`}
+    <p style="color:var(--text-muted);font-size:12.5px;margin-top:14px;">Quantities are counted as "how many recipes call for this item," not summed weights — recipes use inconsistent units (cups vs. cloves vs. tbsp), so treat the × count as a shopping cue, not a precise total.</p>
+    `}
+  `;
+  const gp = document.getElementById('goPlanner');
+  if(gp) gp.onclick = (e)=>{ e.preventDefault(); state.route='planner'; saveState(); render(); };
+}
+
+/* ---------------- mix & match ---------------- */
+function renderMixMatch(){
+  const mm = state.mixmatch;
+  const col = (label, key, options, isSauce=false) => `
+    <div class="mm-col"><h4>${label}</h4>
+      ${options.map(opt=>{
+        const val = isSauce ? opt.id : opt;
+        const text = isSauce ? opt.name : opt;
+        const on = mm[key]===val;
+        return `<button class="mm-option ${on?'on':''}" data-key="${key}" data-val="${esc(val)}">${esc(text)}</button>`;
+      }).join('')}
+    </div>`;
+  const sauceObj = D.SAUCES.find(s=>s.id===mm.sauce);
+  $('#main').innerHTML = `
+    ${pageHead('plan','Mix & Match Builder',`The whole system runs on one formula: protein + carb/base + vegetables + sauce. Pick one from each column to assemble a bowl that isn’t in the ${ALL_MAIN.length}-meal list yet.`)}
+    <div class="mm-grid">
+      ${col('Protein','protein', D.CORE_INGREDIENTS.protein)}
+      ${col('Carb / Base','carb', D.CORE_INGREDIENTS.carb)}
+      ${col('Vegetable','vegetable', D.CORE_INGREDIENTS.vegetable)}
+      ${col('Healthy Fat','fat', D.CORE_INGREDIENTS.fat)}
+      ${col('Sauce','sauce', D.SAUCES, true)}
+    </div>
+    ${(mm.protein||mm.carb||mm.vegetable||mm.sauce) ? `
+    <div class="mm-result">
+      <div class="display">${esc([mm.protein,mm.carb,mm.vegetable].filter(Boolean).join(' + ')) || 'Pick a protein, carb and vegetable'}${sauceObj?` — finished with ${esc(sauceObj.name)}`:''}</div>
+      <div style="font-size:13px;color:var(--text-muted);">
+        ${state.goal==='loss' ? D.PORTION_FRAMEWORK.weightLoss.protein+' protein · '+D.PORTION_FRAMEWORK.weightLoss.starch+' starch · '+D.PORTION_FRAMEWORK.weightLoss.vegetables+' vegetables · '+D.PORTION_FRAMEWORK.weightLoss.sauce+' sauce'
+                             : D.PORTION_FRAMEWORK.weightGain.protein+' protein · '+D.PORTION_FRAMEWORK.weightGain.starch+' starch · '+D.PORTION_FRAMEWORK.weightGain.vegetables+' vegetables · '+D.PORTION_FRAMEWORK.weightGain.sauce+' sauce' }
+      </div>
+      ${mm.fat?`<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Plus a portion of ${esc(mm.fat)}.</div>`:''}
+    </div>` : ''}
+  `;
+  $$('.mm-option', $('#main')).forEach(b=> b.onclick = ()=>{
+    const { key, val } = b.dataset;
+    state.mixmatch[key] = state.mixmatch[key]===val ? null : val;
+    saveState(); renderMixMatch();
+  });
+}
+
+/* ---------------- router ---------------- */
+function render(){
+  renderNav();
+  const r = state.route;
+  if(r==='overview') renderOverview();
+  else if(r==='breakfast') renderMealCategory('breakfast');
+  else if(r==='lunch') renderMealCategory('lunch');
+  else if(r==='dinner') renderMealCategory('dinner');
+  else if(r==='snacks') renderSnacks();
+  else if(r==='sauces') renderSauces();
+  else if(r==='mixmatch') renderMixMatch();
+  else if(r==='planner') renderPlanner();
+  else if(r==='grocery') renderGrocery();
+  window.scrollTo(0,0);
+}
+render();
+</script>
+</body>
+</html>
